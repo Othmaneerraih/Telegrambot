@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Store</title>
+
+    <!-- Optional: Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="promo-banner" id="promo-banner">
+        <div class="promo-inner">
+          <span class="promo-icon">⚡</span>
+          <span class="promo-text" id="promo-text">
+            Promo choc sur le Shop5 !! Profitez-en avant rupture ⚡
+          </span>
+          <button class="promo-close" id="promo-close" type="button" aria-label="Close promo">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div class="header-inner">
+        <a href="C:\Users\Othmane\tg-mini-store\GoldenDawn.webp" class="brand" aria-label="Home">
+          <img class="brand-logo" src="./GoldenDawn.webp" alt="Golden Dawn logo" />
+          <div>
+            <div class="brand-text-main">Golden Dawn ⚜️</div>
+            <div class="brand-text-sub">Découvrez l'horizon interdit – Exclusivement chez Golden Dawn.</div>
+          </div>
+        </a>
+
+        <div class="header-spacer"></div>
+
+        <button class="cart-btn" id="cart-button" aria-label="Cart">
+          🛒
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="app">
+      <section class="how-it-works">
+        <h1 class="how-title">Comment ça marche ?</h1>
+        <p class="how-sub">
+          Choisis tes produits, remplis ton département + adresse, puis envoie ton panier directement sur WhatsApp.
+          Les minimums par shop s'adaptent automatiquement à ton département.
+        </p>
+
+        <div class="how-steps">
+          <div class="how-step">
+            <strong>1. JE CHOISIS</strong>
+            <span>Parcours les variétés par shop, arômes ou nouveautés.</span>
+          </div>
+          <div class="how-step">
+            <strong>2. JE RENSEIGNE</strong>
+            <span>Indique ton département, ton adresse complète et la tournée souhaitée.</span>
+          </div>
+          <div class="how-step">
+            <strong>3. J’ENVOIE</strong>
+            <span>Ton panier part sur WhatsApp, on confirme ensemble ta commande.</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="filter-search-row">
+        <div class="filter-box">
+          <button id="filter-toggle" class="filter-btn" type="button">🔍 Nouveautés ▼</button>
+
+          <div id="filter-panel" class="filter-panel hidden">
+            <button class="filter-item" type="button" data-filter="new">🔥 Nouveautés</button>
+            <button class="filter-item" type="button" data-filter="shop1">⚫ CoffeeShop 1</button>
+            <button class="filter-item" type="button" data-filter="shop2">🟡 CoffeeShop 2</button>
+            <button class="filter-item" type="button" data-filter="shop3">🔵 CoffeeShop 3</button>
+            <button class="filter-item" type="button" data-filter="shop4">⚫ CoffeeShop 4</button>
+            <button class="filter-item" type="button" data-filter="shop5">🟢 CoffeeShop 5</button>
+            <button class="filter-item" type="button" data-filter="shop6">🔴 CoffeeShop 6</button>
+            <button class="filter-item" type="button" data-filter="meetup">🚚 Coffee Meetup</button>
+            <button class="filter-item" type="button" data-filter="sgg">🛍️ Semi-Gros & Gros</button>
+          </div>
+        </div>
+
+        <div class="search-box">
+          <input type="search" id="search-input" class="search-input" placeholder="Rechercher une variété, un shop ou un arôme..." />
+        </div>
+      </div>
+
+      <section class="grid" id="product-grid"></section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+   <!-- PRODUCT MODAL -->
+<div class="modal hidden" id="product-modal">
+  <div class="modal__overlay" data-modal-close></div>
+
+  <div class="modal__dialog" role="dialog" aria-modal="true">
+    <button class="modal__close" type="button" data-modal-close>✕</button>
+
+    <div class="modal__media">
+      <div class="modal__badge" id="modal-badge"></div>
+      <video id="modal-video" preload="metadata"></video>
+    </div>
+
+    <div class="modal__body">
+      <h2 class="modal__title" id="modal-title">Product</h2>
+      <p class="modal__brand" id="modal-brand"></p>
+
+      <p class="modal__price">
+        <span id="modal-main-price">0 €</span>
+        <span id="modal-main-unit">/ —</span>
+      </p>
+
+      <p class="modal__conc" id="modal-meta"></p>
+
+      <div class="modal__tiers" id="modal-tiers"></div>
+
+      <div id="modal-box" class="modal__box hidden">
+        <p class="modal__box-title">Choisis tes variétés</p>
+        <div id="modal-box-picks" class="modal__box-picks"></div>
+        <p id="modal-box-hint" class="modal__box-hint">Sélectionne toutes les variétés pour pouvoir ajouter au panier.</p>
+      </div>
+
+      <p class="modal__desc" id="modal-desc"></p>
+
+      <div class="modal__tags" id="modal-tags"></div>
+
+      <div class="modal__actions">
+        <div class="modal__qty">
+          <button type="button" class="qty-btn" id="modal-qty-minus">−</button>
+          <span class="qty-value" id="modal-qty-value">1</span>
+          <button type="button" class="qty-btn" id="modal-qty-plus">+</button>
+        </div>
+
+        <button class="btn btn--primary" type="button" id="modal-add-cart">
+          Ajouter au panier
+        </button>
+
+        <a class="btn btn--secondary" id="modal-central" href="https://wa.me/" target="_blank" rel="noopener">
+          La Centrale
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- CART OVERLAY -->
+<div class="cart-overlay hidden" id="cart-overlay" data-cart-close></div>
+
+<!-- CART PANEL -->
+<div class="cart-panel hidden" id="cart-panel">
+  <h2 class="cart-title">
+    Panier
+    <button class="cart-close" id="cart-close" type="button" aria-label="Fermer le panier">✕</button>
+  </h2>
+
+  <div id="cart-warning" class="cart-warning hidden"></div>
+
+  <div class="cart-extra">
+    <label class="cart-label" for="cart-dept">Département</label>
+    <select id="cart-dept" class="cart-input">
+      <option value="">Choisir...</option>
+      <optgroup label="Île-de-France">
+        <option value="75">75 - Paris</option>
+        <option value="77">77 - Seine-et-Marne</option>
+        <option value="78">78 - Yvelines</option>
+        <option value="91">91 - Essonne</option>
+        <option value="92">92 - Hauts-de-Seine</option>
+        <option value="93">93 - Seine-Saint-Denis</option>
+        <option value="94">94 - Val-de-Marne</option>
+        <option value="95">95 - Val-d'Oise</option>
+      </optgroup>
+      <optgroup label="Autres zones">
+        <option value="60">60 - Oise</option>
+        <option value="02">02 - Aisne</option>
+        <option value="27">27 - Eure</option>
+        <option value="28">28 - Eure-et-Loire</option>
+        <option value="45">45 - Loiret</option>
+      </optgroup>
+    </select>
+
+    <label class="cart-label" for="cart-address">Adresse de livraison</label>
+    <textarea id="cart-address" class="cart-input cart-textarea" rows="3"
+      placeholder="Nom, adresse complète, code, digicode..."></textarea>
+
+    <label class="cart-label" for="cart-slot">Tournée souhaitée</label>
+    <select id="cart-slot" class="cart-input">
+      <option value="">Choisir...</option>
+      <option value="first">Première tournée 12H - 20H</option>
+      <option value="second">Deuxième tournée 18H - 02H</option>
+    </select>
+  </div>
+
+  <div class="cart-items" id="cart-items"></div>
+
+  <div class="cart-footer">
+    <div class="cart-total">Total : <span id="cart-total">0 €</span></div>
+    <div class="cart-footer-actions">
+      <button class="btn btn--secondary" id="cart-clear" type="button">Vider</button>
+      <a class="btn btn--primary" id="cart-whatsapp" href="#" target="_blank" rel="noopener">
+        Envoyer sur WhatsApp
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden">Ajouté au panier ✔️</div>
+
+
+  </body>
+</html>
