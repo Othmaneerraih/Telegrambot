@@ -1,5 +1,6 @@
 import "./style.css";
-import { PRODUCTS } from "./data/products.js";
+const API_BASE = "https://telegram-miniapp-api.otot108.workers.dev";
+let PRODUCTS = [];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -10,7 +11,7 @@ const state = {
   checkout: { dept: "", address: "", slot: "" },
 };
 
-const WHATSAPP_NUMBER = "212665358533"; // digits only, no +
+const WHATSAPP_NUMBER = "212708829200"; // digits only, no +
 
 /** ---------------- Utilities ---------------- */
 function escapeHtml(s) {
@@ -21,6 +22,108 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+function parseBool(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  return s === "true" || s === "1" || s === "yes";
+}
+
+function safeJsonParse(str, fallback) {
+  try {
+    if (!str) return fallback;
+    return JSON.parse(str);
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeProductRow(r) {
+  const tags =
+    typeof r.tags === "string"
+      ? r.tags.split("|").map((x) => x.trim()).filter(Boolean)
+      : Array.isArray(r.tags)
+        ? r.tags
+        : [];
+
+  const tiers = safeJsonParse(r.tiers_json, []);
+  const boxPicks = safeJsonParse(r.boxPicks_json, []);
+
+  return {
+    id: String(r.id ?? "").trim(),
+    title: r.title || "",
+    subtitle: r.subtitle || "",
+
+    // ✅ NEW: categories column
+    categories: String(r.categories ?? r.category ?? r.shop ?? "").trim(),
+
+    isNew: parseBool(r.isNew),
+    badge: (r.badge || "").trim(),
+    rating: Number(r.rating || 0),
+
+    tags,
+    poster: r.poster || "",
+    video: r.video || "",
+    desc: r.desc || "",
+    tiers: Array.isArray(tiers) ? tiers : [],
+    isBox: parseBool(r.isBox),
+    boxPicks: Array.isArray(boxPicks) ? boxPicks : [],
+  };
+}
+function uniqueSorted(arr) {
+  return [...new Set(arr.map(x => String(x || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+}
+
+function renderFilterPanelFromProducts() {
+  if (!filterPanel) return;
+
+  const cats = [...new Set(PRODUCTS.map(p => (p.categories || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+
+  const badges = [...new Set(PRODUCTS.map(p => (p.badge || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+
+  const buttons = [];
+
+  // ✅ ALL must have a non-empty value
+  buttons.push(`<button class="filter-item" type="button" data-filter="__all">ALL</button>`);
+
+  // categories
+  for (const c of cats) {
+    buttons.push(`<button class="filter-item" type="button" data-filter="cat:${escapeHtml(c)}">${escapeHtml(c)}</button>`);
+  }
+
+  // badges
+  for (const b of badges) {
+    buttons.push(`<button class="filter-item" type="button" data-filter="badge:${escapeHtml(b)}">${escapeHtml(b)}</button>`);
+  }
+
+  filterPanel.innerHTML = buttons.join("");
+}
+
+
+
+
+async function loadProducts() {
+  const res = await fetch(`${API_BASE}/products`);
+  const data = await res.json();
+
+  if (!data.ok) throw new Error(data.error || "Failed to load products");
+
+  PRODUCTS = (data.items || []).map(normalizeProductRow);
+
+  // ✅ Default: no filter selected
+  state.activeFilter = "";
+  if (filterToggle) filterToggle.textContent = "🔍 Filter ▼";
+
+  // ✅ Build dropdown items from sheet data
+  renderFilterPanelFromProducts();
+
+  renderGrid();
+  updateCartCount();
+  renderCart();
+}
+
 
 function moneyEUR(n) {
   return `${Number(n).toFixed(0)} €`;
@@ -85,15 +188,22 @@ filterPanel?.addEventListener("click", (e) => {
   const btn = e.target.closest(".filter-item");
   if (!btn) return;
 
-  // support both naming styles
-  const filter = btn.dataset.filter || btn.dataset.chip;
-  if (!filter) return;
+  const filter = btn.dataset.filter;
+  if (filter == null) return; // <-- IMPORTANT: don't use !filter
 
   state.activeFilter = filter;
-  filterToggle.textContent = `${btn.textContent} ▼`;
+
+  if (filter === "__all") {
+    filterToggle.textContent = "🔍 Filtrer ▼";
+  } else {
+    filterToggle.textContent = `${btn.textContent} ▼`;
+  }
+
   filterPanel.classList.add("hidden");
   renderGrid();
 });
+
+
 
 /** ---------------- Search ---------------- */
 const searchInput = $("#search-input");
@@ -104,9 +214,27 @@ searchInput?.addEventListener("input", () => {
 
 /** ---------------- Filtering logic ---------------- */
 function matchesFilter(p) {
-  if (state.activeFilter === "new") return !!p.isNew;
-  return p.shop === state.activeFilter;
+  const f = state.activeFilter;
+
+  // default / ALL
+  if (!f || f === "__all") return true;
+
+  // category filter
+  if (f.startsWith("cat:")) {
+    const want = f.slice(4).trim().toLowerCase();
+    return String(p.categories || "").trim().toLowerCase() === want;
+  }
+
+  // badge filter
+  if (f.startsWith("badge:")) {
+    const want = f.slice(6).trim().toLowerCase();
+    return String(p.badge || "").trim().toLowerCase() === want;
+  }
+
+  return true;
 }
+
+
 
 function matchesSearch(p) {
   if (!state.search) return true;
@@ -600,3 +728,14 @@ cartWhatsapp?.addEventListener("click", (e) => {
 renderGrid();
 updateCartCount();
 renderCart();
+
+loadProducts().catch((err) => {
+  console.error(err);
+  const grid = document.querySelector("#product-grid");
+  if (grid) {
+    grid.innerHTML = `<div style="padding:14px;opacity:.85;">
+      ❌ Failed to load products.<br>
+      <span style="opacity:.8">${escapeHtml(err.message || String(err))}</span>
+    </div>`;
+  }
+});
